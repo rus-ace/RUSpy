@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program. 
 
 from operator import pos
 import sys
@@ -285,7 +285,7 @@ class FigureTab:
     fre = self.find_dPoint()[1]
     j = self.find_dPoint()[0]
     posf = [fre,fre]
-    h = (data4[j])
+    h = sqr2*(data4[j])
     z = 0.0
     if self.mode == 'absm':
         #hgt = sqr2*hgt
@@ -295,7 +295,7 @@ class FigureTab:
         axes3.set_ylim(-hgt[1],hgt[1])
         val = [-h, h]
     print(hgt, val)
-    self.temp.setValue(hgt[1])
+    self.temp.setValue(h)
     offset = self.freq[12]-self.freq[0]
     x = axes3.get_ylim()
     axes3.plot(posf, val, color = 'black', linewidth = 1, linestyle = 'solid')

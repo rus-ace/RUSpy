@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program. 
 
 from operator import pos
 import sys
@@ -45,6 +45,7 @@ from PyQt5.QtWidgets import QApplication, QDoubleSpinBox, QMainWindow, QMessageB
 from PyQt5.QtNetwork import QAbstractSocket, QTcpSocket
 
 sqr2 = 1/math.sqrt(2)
+z = 0.0
 
 
 Ui_rus, QMainWindow = loadUiType('rus.ui')
@@ -78,7 +79,7 @@ class FigureTab:
     # remove subplots action
     #actions = self.toolbar.actions()
     layout.addWidget(self.toolbar)
-    tf = 'adj'
+    tf = ''
     self.tf = tf
     ##################################################################################
     #add crsor
@@ -124,8 +125,10 @@ class FigureTab:
     layout.addWidget(self.toolbar)
     #self.figure.subplots_adjust(left = 0.09, bottom = 0.1, right = 0.91, top = 0.96)
     axes1 = self.figure.add_subplot(1,1,1)
+    axes2 = self.figure.add_subplot(1,1,1)
     axes3 = self.figure.add_subplot(1,1,1)
     self.axes1 = axes1
+    self.axes2 = axes2
     self.axes3 = axes3
     self.mode = 'reim'
     self.rus = rus
@@ -157,6 +160,7 @@ class FigureTab:
     self.figure.text(0.12, 0.005,r'  f                   z               $\phi$                            best $\phi$')
     data4 = np.abs(data1 +1j*data2)
     self.data4 = data4
+    #limit2 = limit1
     ph = 0
     phD = 0
     co = 1
@@ -171,7 +175,7 @@ class FigureTab:
           if tf == 'adj':
                   d1 = sum(data1)
                   d2 = sum(data2)
-                  if d2 == 0.0: d1 = 1.0
+                  if d2 == z: d1 = 1.0
                   ph = (math.atan2(-d2, d1))
                   phD = math.degrees(ph)
                   self.best.setValue(phD)
@@ -226,12 +230,8 @@ class FigureTab:
     axes2.set_xlim(xlim)
     if limit2 is not None: axes2.set_ylim(limit2)
     axes3 = axes1.twinx()
-    #axes3.set_xlim(xlim)
     self.axes3 = axes3
     if limit2 is not None: axes3.set_ylim(limit2)
-    x = axes3.get_ylim()
-    self.x = x
-    print(self.mode,hgt, x)
     axes2.tick_params('y', color = 'red', labelcolor = 'red')
     axes2.yaxis.label.set_color('red')
     self.curve2, = axes2.plot(freq, d2, color = 'red', label = label2)
@@ -239,10 +239,11 @@ class FigureTab:
     self.curse = Cursor(axes3, horizOn=True, vertOn=True, useblit=True, color = 'blue', linewidth = 1)
     span = [0,0]
     self.span = span
-    axes3.callbacks.connect('xlim_changed',self.on_xlims_change)
-    self.crsor.valueChanged.connect(self.plot_crsor)
+    #self.crsor.valueChanged.connect(self.plot_crsr)
     #if tf == '': self.canvas.draw()
     self.canvas.draw()
+    axes3.callbacks.connect('xlim_changed',self.on_xlims_change)
+    self.crsor.valueChanged.connect(self.plot_crsr)
   
   def mark(self):
     self.canvas.draw
@@ -256,42 +257,42 @@ class FigureTab:
  
   def on_xlims_change(self, axes3):
     #gets zoom box coordinates
+    #print('xlims_changed')
     k = self.cbox()[2]
     d = self.cbox()[3]
     f = self.cbox()[4]
     self.temp.setValue(sqr2*d[k])
     self.crsor.setValue(f[k])
 
-  def plot_crsor(self):
+  def plot_crsr(self):
     #plots vertical line at peak position and can be moved
+    #print('plot_crsr')
     axes3 = self.axes3
     data4 = self.data4
-    if self.cbox() == None: return
-    d = self.cbox()[3]
-    max = np.max(d)
+    if self.cbox() == None: 
+      return
+    #d = self.cbox()[3]
+    hgt = self.cbox()[6]
     axes3.cla()
-    axes3.tick_params(right = False)
-    axes3.yaxis.set_ticklabels([])
-    limi2 = self.limit2
-    axes3.set_ylim(limi2)
-    axes3.set_ylim([-max,max])    
+    #axes3.tick_params(right = False)
+    #axes3.yaxis.set_ticklabels([])
     fre = self.find_dPoint()[1]
     j = self.find_dPoint()[0]
     posf = [fre,fre]
-    hgt = (data4[j])
+    h = (data4[j])
+
+    axes3.set_ylim(hgt)
+    offset = self.freq[6]-self.freq[0]
     if self.mode == 'absm':
-        hgt = sqr2*hgt
-        axes3.set_ylim([0.0, sqr2*max]) 
-        val = [0.0, hgt]
+        val = [z, sqr2*h]
+        self.temp.setValue(sqr2*h)
+        q = sqr2*h
     if self.mode == 'reim':
-        axes3.set_ylim([-max, max])
-        val = [-hgt, hgt]
-    axes3.set_ylim(limi2)
-    self.temp.setValue(hgt)
-    offset = self.freq[12]-self.freq[0]
-    x = axes3.get_ylim()
+        val = [-h, h]
+        self.temp.setValue(h)
+        q = h
     axes3.plot(posf, val, color = 'black', linewidth = 1, linestyle = 'solid')
-    axes3.text(fre+offset, hgt, round(fre,3), bbox=dict(facecolor = 'yellow', alpha = 0.5))
+    axes3.text(fre+offset, q, round(fre,3), bbox=dict(facecolor = 'yellow', alpha = 0.5))
     self.canvas.draw()
     return
 
@@ -326,7 +327,6 @@ class FigureTab:
   def update_reim(self):
     self.mode = 'reim'
     getattr(self, 'plot_%s' % self.mode)()
-    #self.plot_reim()
 
   def plot_absm(self):
     self.mode = 'absm'
@@ -340,12 +340,13 @@ class FigureTab:
   def update_absm(self):
     self.mode = 'absm'
     getattr(self, 'plot_%s' % self.mode)()
-    #self.plot_reim()
 
   def cbox(self):
     span = self.axes3.get_xlim()
-    if span[0] == 0.0: return
-    #print(span)
+    hight = self.axes3.get_ylim()
+    if span[0] == z: 
+        wx = 'nozbox'
+        return
     d = self.data4
     f = self.freq
     f0 = span[0]
@@ -365,7 +366,8 @@ class FigureTab:
     freqs = f[i:j]
     k = np.argmax(datas)
     km = k+i
-    return fl, fr, k, datas, freqs
+    wx = 'zbox'
+    return fl, fr, k, datas, freqs, span, hight, wx
 
   def find_dPoint(self):
     f = self.crsor.value()
@@ -376,7 +378,7 @@ class FigureTab:
             break
     fre = self.freq[i-2]
     j = i-2
-    return j, fre  
+    return j, fre
 
 class rus(QMainWindow, Ui_rus):
   graphs = ['reim', 'absm']
