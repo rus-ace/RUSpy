@@ -40,9 +40,12 @@ from matplotlib.widgets import Cursor
 
 from PyQt5.uic import loadUiType
 from PyQt5.QtCore import QRegExp, QTimer, QSettings, QDir, Qt
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtGui import QRegExpValidator, QPalette, QColor
 from PyQt5.QtWidgets import QApplication, QDoubleSpinBox, QMainWindow, QMessageBox, QDialog, QFileDialog, QPushButton, QLabel, QSpinBox
 from PyQt5.QtNetwork import QAbstractSocket, QTcpSocket
+
+sqr2 = 1/math.sqrt(2)
+
 
 Ui_rus, QMainWindow = loadUiType('rus.ui')
 
@@ -51,6 +54,7 @@ class Measurement:
     self.freq = np.linspace(start, stop, size)
     self.data = np.zeros(size, np.complex64)
     self.period = 62500
+    
 
 class NavigationToolbar(NavigationToolbar):
     # only display the buttons we need
@@ -59,12 +63,14 @@ class NavigationToolbar(NavigationToolbar):
 
 class FigureTab:
   #event = 'motion_notify_event'
+  #event = 'xlim_changed'
   def __init__(self, layout, rus):
     # create figure
     self.figure = Figure()
     if sys.platform != 'win32':
       self.figure.set_facecolor('none')
     self.canvas = FigureCanvas(self.figure)
+    self.canvas.mpl_connect('button_press_event', self.onclick)
     layout.addWidget(self.canvas)
     # create navigation toolbar
     self.toolbar = NavigationToolbar(self.canvas, None, False)
@@ -72,25 +78,26 @@ class FigureTab:
     # remove subplots action
     #actions = self.toolbar.actions()
     layout.addWidget(self.toolbar)
-    self.tf = ''
+    tf = 'adj'
+    self.tf = tf
     ##################################################################################
-    #add cursor
-    self.cursor = QDoubleSpinBox()
-    self.cursor.setDecimals(3)
-    self.toolbar.addWidget(self.cursor)
-    #add value at cursor
+    #add crsor
+    self.crsor = QDoubleSpinBox()
+    self.crsor.setDecimals(3)
+    self.toolbar.addWidget(self.crsor)
+    #add value at crsor
     self.temp = QDoubleSpinBox()
     self.temp.setReadOnly(True)
     self.temp.setButtonSymbols(2)
     self.temp.setDecimals(6)
     self.toolbar.addWidget(self.temp)
     #add set phase
-    self.mode = 'dut'
+    self.mode = 'reim'
     self.phase = QSpinBox()
     self.phase.setSingleStep(5)
     self.phase.setMaximum(180)
     self.phase.setMinimum(-180)
-    if self.mode == 'dut': self.phase.valueChanged.connect(self.phase_set)
+    if self.mode == 'reim': self.phase.valueChanged.connect(self.phase_set)
     self.toolbar.addWidget(self.phase)
     #add  best phase button
     self.bPhase = QPushButton('Best Phase')
@@ -106,9 +113,13 @@ class FigureTab:
     self.toolbar.addWidget(self.best)
     #add rescale button
     self.plotButton = QPushButton('Rescale')
-    self.plotButton.setStyleSheet('background-color:blue')
+    self.plotButton.setStyleSheet('background-color:blue; color:rgb(255, 255, 255)')
     self.plotButton.clicked.connect(self.plot)
     self.toolbar.addWidget(self.plotButton)
+    #add mark peak button
+    self.peak = QPushButton('Mark')
+    self.peak.clicked.connect(self.mark)
+    self.toolbar.addWidget(self.peak)
 ##################################################################################
     layout.addWidget(self.toolbar)
     #self.figure.subplots_adjust(left = 0.09, bottom = 0.1, right = 0.91, top = 0.96)
@@ -116,7 +127,7 @@ class FigureTab:
     axes3 = self.figure.add_subplot(1,1,1)
     self.axes1 = axes1
     self.axes3 = axes3
-    self.mode = 'dut'
+    self.mode = 'reim'
     self.rus = rus
 
   def xlim(self, freq):
@@ -128,12 +139,12 @@ class FigureTab:
     return (min - margin, max + margin)
 
   def plot(self):
-    self.cursor.valueChanged.connect(self.plot_cursor)
+    self.crsor.valueChanged.connect(self.plot_crsor)
     getattr(self, 'plot_%s' % self.mode)()
 
 
   def update(self, mode):
-    self.cursor.valueChanged.connect(self.plot_cursor)
+    self.crsor.valueChanged.connect(self.plot_crsor)
     getattr(self, 'update_%s' % mode)()
 
 ####################################################################################
@@ -143,14 +154,16 @@ class FigureTab:
     matplotlib.rcdefaults()
     matplotlib.rcParams['axes.formatter.use_mathtext'] = True
     self.figure.clf()
+    self.figure.text(0.12, 0.005,r'  f                   z               $\phi$                            best $\phi$')
     data4 = np.abs(data1 +1j*data2)
+    self.data4 = data4
     ph = 0
     phD = 0
     co = 1
     si = 0
     #self.tf = ''
     if tf!='':
-      if self.mode == 'dut':
+      if self.mode == 'reim':
           if tf == 'set':
                   phD = self.phase.value()
                   ph = math.radians(phD)
@@ -165,21 +178,20 @@ class FigureTab:
                   tf = ''
           co = math.cos(ph)
           si = math.sin(ph)
+    self.phase.setValue(phD)
     d1 = co*data1 - si*data2
     d2 = si*data1 + co*data2
     self.freq = freq
     self.limit2 = limit2
-    self.data4 = data4
     #find maximum
     i = np.argmax(data4)
     freqmax = float(freq[i])
     self.vmax = float(data1[i])
-    freq3 = [freqmax,freqmax] #############
-    data3 = [-data4[i], data4[i]]
+    freq3 = [freqmax,freqmax]
+    data3 = [-sqr2*data4[i],sqr2**data4[i]]
     #add axes
     #self.figure.subplots_adjust(left = 0.09, bottom = 0.1, right = 0.91, top = 0.96)
     axes1 = self.figure.add_subplot(1,1,1)
-    #axes1 = self.axes1
     axes1.cla()
     axes1.xaxis.grid()
     axes1.set_xlabel('kHz')
@@ -187,17 +199,15 @@ class FigureTab:
     xlim = self.xlim(freq)
     axes1.set_xlim(xlim)
     ###################################################################################
-    self.data3 = data3
-    #Setup cursor spinbox
-    self.cursor.setMaximum(freq[-1])
-    self.cursor.setMinimum(freq[0])
+    #Setup crsor spinbox
+    self.crsor.setMaximum(freq[-1])
+    self.crsor.setMinimum(freq[0])
     sstep = (freq[1]-freq[0])
-    self.cursor.setSingleStep(sstep)
-    self.cursor.setValue(freqmax)
-    self.temp.setValue(data4[i])
-    #############################################################################
-    #self.cursor.valueChanged.connect(self.plot_cursor)
-    #########################################################################
+    self.crsor.setSingleStep(sstep)
+    self.crsor.setValue(freqmax)
+    hgt = np.abs(data4[i])
+    if self.mode == 'reim': self.temp.setValue(np.abs(sqr2*data4[i]))
+    if self.mode == 'absm':  self.temp.setValue(np.abs(sqr2*data1[i]))
     if limit1 is not None: axes1.set_ylim(limit1)
     ##############################################################################
     self.curve1, = axes1.plot(freq, d1, color = 'blue', label = label1)
@@ -214,90 +224,159 @@ class FigureTab:
     axes2.set_ylabel(label2)
     axes2.set_xlim(xlim)
     axes3 = axes1.twinx()
-    axes3.tick_params(right = False)
-    axes3.yaxis.set_ticklabels([])
     self.axes3 = axes3
     if limit2 is not None: axes2.set_ylim(limit2)
+    if limit2 is not None: axes3.set_ylim(limit2)
+    axes3.tick_params(right = False)
+    axes3.yaxis.set_ticklabels([])
+    #if limit2 is not None: axes3.set_ylim(limit2)
     axes2.tick_params('y', color = 'red', labelcolor = 'red')
     axes2.yaxis.label.set_color('red')
     self.curve2, = axes2.plot(freq, d2, color = 'red', label = label2)
-    self.curve3, = axes3.plot(freq3, data3, color = 'green', linewidth = 2, linestyle = 'dashed')
-    if tf == '': self.canvas.draw()
+    self.curve3, = axes3.plot(freq3, data3, color = 'blue', linewidth = 1, linestyle = '--')
+    self.curse = Cursor(axes3, horizOn=True, vertOn=True, useblit=True, color = 'blue', linewidth = 1)
+    span = [0,0]
+    self.span = span
+    axes3.callbacks.connect('xlim_changed',self.on_xlims_change)
+    #if tf == '': self.canvas.draw()
+    self.canvas.draw()
   
-  
-  def plot_cursor(self):
+  def mark(self):
+    self.canvas.draw
+
+  def onclick(self,event):
+    #gets cursor coordinates
+    ix, iy = event.xdata, event.ydata
+    #print ( ix, iy)
+    coords = [ix, iy]
+    self.coords = coords
+ 
+  def on_xlims_change(self, axes3):
+    #gets zoom box coordinates
+    k = self.box(axes3)[2]
+    d = self.box(axes3)[3]
+    f = self.box(axes3)[4]
+    self.temp.setValue(sqr2*d[k])
+    self.crsor.setValue(f[k])
+
+  def plot_crsor(self):
+    #plots vertical line at peak position and can be moved
     axes3 = self.axes3
+    data4 = self.data4
+    if self.box(axes3) == None: return
+    #k = self.box(axes3)[2]
+    d = self.box(axes3)[3]
+    #f = self.box(axes3)[4]
+    max = np.max(d)
     axes3.cla()
     axes3.tick_params(right = False)
     axes3.yaxis.set_ticklabels([])
     limi2 = self.limit2
-    if limi2 is not None: axes3.set_ylim(limi2)
-    f = self.cursor.value()
-    i = 1
-    for fre in self.freq:
-        i = i + 1
-        if fre >= f:
-                i = i - 1
-                break
+    axes3.set_ylim(limi2)
+    fre = self.find_dPoint()[1]
+    j = self.find_dPoint()[0]
     posf = [fre,fre]
-    hgt = self.data4[i]
-    val = [-hgt, hgt]
-    offset = self.freq[12]-self.freq[0]
+    hgt = 0.99*(data4[j])
+    if self.mode == 'absm':
+        axes3.set_ylim([0.0, max]) 
+        val = [0.0, sqr2*hgt]
+    if self.mode == 'reim':
+        axes3.set_ylim([-max, max])
+        val = [-hgt, hgt]
+    if self.mode == 'absm': hgt = sqr2*hgt
     self.temp.setValue(hgt)
-    #self.curve3, = self.axes3.plot(posf, val, color = 'black', linewidth = 2, linestyle = 'solid')
-    axes3.plot(posf, val, color = 'black', linewidth = 2, linestyle = 'solid')
-    axes3.text(fre+offset, hgt/2, round(fre,3), bbox=dict(facecolor = 'yellow', alpha = 0.5))
-
-    self.plot_absm
+    offset = self.freq[12]-self.freq[0]
+    x = axes3.get_ylim()
+    axes3.plot(posf, val, color = 'black', linewidth = 1, linestyle = 'solid')
+    axes3.text(fre+offset, hgt, round(fre,3), bbox=dict(facecolor = 'yellow', alpha = 0.5))
     self.canvas.draw()
+    return
 
   def phase_adj(self, tf):
-    #self.mode = 'dut'
-    self.tf = 'adj'
+    #trigger to roll the phase
+    if self.mode =='absm': return
+    tf = 'adj'
+    self.tf = tf
     getattr(self, 'plot_%s' % self.mode)()
   
 
   def phase_set(self, tf):
+    #trigger to set best phase
       if self.mode == 'absm': 
         self.phase.setValue(0)
         return
-      self.tf = 'set'
+      tf = 'set'
+      self.tf = tf
       getattr(self, 'plot_%s' % self.mode)()
 
-  def plot_re_im(self, freq, data, label, mode):
-        #self.mode = 'dut'
-        max = np.fmax(0.001, np.abs(data).max())
-        label1 = 'real'
-        label2 = 'imag'
+  def plot_reim(self):
+        self.mode = 'reim'
+        freq = self.rus.reim.freq
+        data = self.rus.reim.data
+        d1 = np.real(data)
+        d2 = np.imag(data)
+        d3 = np.absolute(data)
+        max = np.fmax(0.001, d3.max())
         tf = self.tf
-        #self.curve3 = self.plot_curves(freq, np.real(data), label1, (-1.03 * max, 1.03 * max), np.imag(data), label2, (-1.03*max, 1.03*max), tf)
-        self.plot_curves(freq, np.real(data), label1, (-1.03 * max, 1.03 * max), np.imag(data), label2, (-1.03*max, 1.03*max), tf)
+        self.plot_curves(freq, d1, 'real', (-1.03 * max, 1.03 * max), d2, 'imag', (-1.03*max, 1.03*max), tf)
 
-  def update_re_im(self, freq, data, label, mode):
-     self.plot_re_im(freq, data, label, mode)
-
-  def plot_dut(self):
-    self.plot_re_im(self.rus.dut.freq, self.rus.dut.data, 'dut', 'dut')
-
-  def update_dut(self):
-    self.update_re_im(self.rus.dut.freq, self.rus.dut.data, 'dut', 'dut')
+  def update_reim(self):
+    self.mode = 'reim'
+    getattr(self, 'plot_%s' % self.mode)()
+    #self.plot_reim()
 
   def plot_absm(self):
     self.mode = 'absm'
-    freq = self.rus.dut.freq
-    d3 = np.absolute(self.rus.dut.data)
+    freq = self.rus.reim.freq
+    d3 = np.absolute(self.rus.reim.data)
     max = np.fmax(0.001,d3.max())
     tf = self.tf
     self.plot_curves(freq, d3, ' ', (0, 1.03*max), d3, 'Magnitude', (0, 1.03*max), tf)
     ##############################################################################################################
 
   def update_absm(self):
-    #self.mode = 'absm'
-    self.plot_absm()
+    self.mode = 'absm'
+    getattr(self, 'plot_%s' % self.mode)()
+    #self.plot_reim()
+
+  def box(self,axes3):
+    span = axes3.get_xlim()
+    if span[0] == 0.0: return
+    #print(span)
+    d = self.data4
+    f = self.freq
+    f0 = span[0]
+    i = 0
+    for fl in self.freq:
+        i = i + 1
+        if fl >= f0:
+                i = i
+                break
+    f0 = span[1]
+    j = 0
+    for fr in self.freq:
+        j = j + 1
+        if fr >= f0:
+                  break
+    datas = d[i:j]
+    freqs = f[i:j]
+    k = np.argmax(datas)
+    km = k+i
+    return fl, fr, k, datas, freqs
+
+  def find_dPoint(self):
+    f = self.crsor.value()
+    i = 0
+    for fre in self.freq:
+        i = i+1
+        if fre >= f: 
+            break
+    fre = self.freq[i-2]
+    j = i-2
+    return j, fre  
 
 class rus(QMainWindow, Ui_rus):
-  graphs = ['dut', 'absm']
-
+  graphs = ['reim', 'absm']
   def __init__(self):
     super(rus, self).__init__()
     self.setupUi(self)
@@ -309,27 +388,31 @@ class rus(QMainWindow, Ui_rus):
     self.reading = False
     self.auto = False
     # sweep parameters
-    self.sweep_start = 336
-    self.sweep_stop = 340
-    self.sweep_Hz = 2
+    self.sweep_start = 300
+    self.sweep_stop = 400
+    self.sweep_Hz = 20
     self.sweep_size = int(1000*(self.sweep_stop-self.sweep_start)/self.sweep_Hz)
+    #sstep = self.sweep_Hz
     if(self.sweep_size)>32766:
       self.sweep_size = 32766
+      self.sweep_Hz = (self.sweep_stop-self.sweep_start)/32766
     # buffer and offset for the incoming samples
     self.buffer = bytearray(16 * 32768)
     self.offset = 0
     self.data = np.frombuffer(self.buffer, np.complex64)
     # create measurements
-    self.dut = Measurement(self.sweep_start, self.sweep_stop, self.sweep_size)
+    self.reim = Measurement(self.sweep_start, self.sweep_stop, self.sweep_size)
     ######################################################################################################
-    self.mode = 'dut'   
+    self.mode = 'reim'   
     # create figures
     self.tabs = {}
     for i in range(len(self.graphs)):
       layout = getattr(self, '%sLayout' % self.graphs[i])
       self.tabs[i] = FigureTab(layout, self)
     # configure widgets
-    self.rateValue.addItems(['5000', '1000', '500', '100', '50', '10', '5', '1'])
+    self.rateValue.addItems([ '0.7','2', '6', '20', '60', '200', '600'])
+    #self.rateValue.addItems(['5000', '1000', '500', '100', '50', '10', '5', '1'])
+    #rate = [10, 50, 100, 500, 1000, 5000, 10000, 50000][value]
     self.rateValue.lineEdit().setReadOnly(True)
     self.rateValue.lineEdit().setAlignment(Qt.AlignRight)
     for i in range(self.rateValue.count()):
@@ -349,13 +432,13 @@ class rus(QMainWindow, Ui_rus):
     self.writeButton.clicked.connect(self.write_cfg)
     self.readButton.clicked.connect(self.read_cfg)
     #########################################################################################################
-    self.singleSweep.clicked.connect(partial(self.sweep, 'dut'))
+    self.singleSweep.clicked.connect(self.sweep)
     self.autoSweep.clicked.connect(self.sweep_auto)
     self.stopSweep.clicked.connect(self.cancel)
     self.datButton.clicked.connect(self.write_dat)
     self.startValue.valueChanged.connect(self.set_start)
     self.stopValue.valueChanged.connect(self.set_stop)
-    self.sizeValue.valueChanged.connect(self.set_size)
+    self.stepValue.valueChanged.connect(self.set_size)
     self.rateValue.currentIndexChanged.connect(self.set_rate)
     self.level1Value.valueChanged.connect(self.set_level1)
     self.tabWidget.currentChanged.connect(self.update_tab)
@@ -366,7 +449,7 @@ class rus(QMainWindow, Ui_rus):
     self.sweepTimer.timeout.connect(self.sweep_timeout)
 
   def set_enabled(self, enabled):
-    widgets = [self.rateValue, self.level1Value, self.startValue, self.stopValue, self.sizeValue, self.singleSweep, self.autoSweep]
+    widgets = [self.rateValue, self.level1Value, self.startValue, self.stopValue, self.stepValue, self.singleSweep, self.autoSweep]
     
     for entry in widgets:
       entry.setEnabled(enabled)
@@ -375,7 +458,7 @@ class rus(QMainWindow, Ui_rus):
     if self.idle:
       self.connectButton.setEnabled(False)
       self.socket.connectToHost(self.addrValue.text(), 1001)
-      self.startTimer.start(5000)
+      self.startTimer.start(2000)
     else:
       self.stop()
 
@@ -417,6 +500,7 @@ class rus(QMainWindow, Ui_rus):
         return
       size = self.socket.bytesAvailable()
       self.progressBar.setValue((self.offset + size) / 16)
+      self.progressBar.setTextVisible(True)
       limit = 16 * self.sweep_size
       if self.offset + size < limit:
         self.buffer[self.offset:self.offset + size] = self.socket.read(size)
@@ -425,7 +509,7 @@ class rus(QMainWindow, Ui_rus):
         self.buffer[self.offset:limit] = self.socket.read(limit - self.offset)
         adc1 = self.data[0::2]
         #adc2 = self.data[1::2]
-        attr = getattr(self, 'dut')
+        attr = getattr(self, 'reim')
         start = self.sweep_start
         stop = self.sweep_stop 
         size = self.sweep_size
@@ -452,14 +536,18 @@ class rus(QMainWindow, Ui_rus):
     self.sweep_stop = value
 
   def set_size(self, value):
-    self.sweep_size = int(1000*(self.sweep_stop-self.sweep_start)/value)
+    Hz = self.stepValue.value()
+    self.sweep_size = int(1000*(self.sweep_stop-self.sweep_start)/Hz)
     if self.sweep_size > 32766:
       self.sweep_size = 32766
-    #print(self.sweep_size)
+      Hz = int(1000*(self.sweep_stop-self.sweep_start))/32766
+      self.stepValue.setValue(Hz)
 
   def set_rate(self, value):
     if self.idle: return
-    rate = [10, 50, 100, 500, 1000, 5000, 10000, 50000][value]
+    rate = [30, 100, 300, 1000, 3000, 10000, 30000][value]
+    #rate = [10, 50, 100, 500, 1000, 5000, 10000, 50000][value]
+    #self.rateValue.addItems(['5000', '1000', '500', '100', '50', '10', '5', '1'])
     self.socket.write(struct.pack('<I', 3<<28 | int(rate)))
 
   def set_corr(self, value):
@@ -494,6 +582,7 @@ class rus(QMainWindow, Ui_rus):
     self.mode = mode
     self.offset = 0
     self.reading = True
+    self.stepValue.valueChanged.connect(self.set_size)
     self.socket.write(struct.pack('<I', 0<<28 | int(self.sweep_start * 1000)))
     self.socket.write(struct.pack('<I', 1<<28 | int(self.sweep_stop * 1000)))
     self.socket.write(struct.pack('<I', 2<<28 | int(self.sweep_size)))
@@ -516,7 +605,7 @@ class rus(QMainWindow, Ui_rus):
 
   def sweep_timeout(self):
     if not self.reading:
-      self.sweep('dut')
+      self.sweep('reim')
 
   def update_tab(self):
     index = self.tabWidget.currentIndex()
@@ -548,23 +637,23 @@ class rus(QMainWindow, Ui_rus):
     settings.setValue('addr', self.addrValue.text())
     settings.setValue('rate', self.rateValue.currentIndex())
     settings.setValue('level_1', self.level1Value.value())
-    settings.setValue('dut_start', int(self.dut.freq[0]))
-    settings.setValue('dut_stop', int(self.dut.freq[-1]))
-    settings.setValue('dut_size', self.dut.freq.size)
+    settings.setValue('reim_start', int(self.reim.freq[0]))
+    settings.setValue('reim_stop', int(self.reim.freq[-1]))
+    #settings.setValue('reim_size', self.reim.freq.size)
     settings.setValue('step',self.sweep_Hz)
   
   def read_cfg_settings(self, settings):
     self.addrValue.setText(settings.value('addr', '192.168.1.100'))
     self.rateValue.setCurrentIndex(settings.value('rate', 0, type = int))
-    self.level1Value.setValue(settings.value('level_1', 2, type = int))
-    dut_start = settings.value('dut_start', 336, type = int)
-    dut_stop = settings.value('dut_stop', 340, type = int)
-    dut_size = settings.value('dut_size', 1, type = int)
-    self.sweep_Hz = settings.value('step',2,type = int)
-    self.startValue.setValue(dut_start)
-    self.stopValue.setValue(dut_stop)
-    self.sizeValue.setValue(dut_size)
-    self.sizeValue.setValue(self.sweep_Hz)
+    self.level1Value.setValue(settings.value('level_1', 1, type = int))
+    reim_start = settings.value('reim_start', 300, type = int)
+    reim_stop = settings.value('reim_stop', 400, type = int)
+    #reim_size = settings.value('reim_size', 1, type = int)
+    self.sweep_Hz = settings.value('step',20,type = int)
+    self.startValue.setValue(reim_start)
+    self.stopValue.setValue(reim_stop)
+    #self.stepValue.setValue(reim_size)
+    self.stepValue.setValue(self.sweep_Hz)
     
   def write_dat(self):
     dialog = QFileDialog(self, 'Write dat file', '.', '*.dat')
@@ -574,8 +663,8 @@ class rus(QMainWindow, Ui_rus):
     if dialog.exec() == QDialog.Accepted:   
       name = dialog.selectedFiles()
       fh = open(name[0], 'w')
-      f = self.dut.freq
-      d = self.dut.data
+      f = self.reim.freq
+      d = self.reim.data
       fh.write('frequency    real         imag\n')
       for i in range(f.size):
         fh.write('%12.2f  %12.7f  %12.7f\n' % (f[i] * 1000, d.real[i], d.imag[i]))
