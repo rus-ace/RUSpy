@@ -45,6 +45,7 @@ from PyQt5.QtWidgets import QApplication, QDoubleSpinBox, QMainWindow, QMessageB
 from PyQt5.QtNetwork import QAbstractSocket, QTcpSocket
 
 sqr2 = 1/math.sqrt(2)
+z = 0.0
 
 
 Ui_rus, QMainWindow = loadUiType('rus.ui')
@@ -78,12 +79,13 @@ class FigureTab:
     # remove subplots action
     #actions = self.toolbar.actions()
     layout.addWidget(self.toolbar)
-    tf = 'adj'
+    tf = ''
     self.tf = tf
     ##################################################################################
     #add crsor
     self.crsor = QDoubleSpinBox()
     self.crsor.setDecimals(3)
+    self.crsor.valueChanged.connect(self.plot_crsr)
     self.toolbar.addWidget(self.crsor)
     #add value at crsor
     self.temp = QDoubleSpinBox()
@@ -114,13 +116,12 @@ class FigureTab:
     #add rescale button
     self.plotButton = QPushButton('Rescale')
     self.plotButton.setStyleSheet('background-color:blue; color:rgb(255, 255, 255)')
-    self.plotButton.clicked.connect(self.plot)
+    self.plotButton.clicked.connect(self.plot_reim)
     self.toolbar.addWidget(self.plotButton)
     #add mark peak button
     self.peak = QPushButton('Mark')
     self.peak.clicked.connect(self.mark)
     self.toolbar.addWidget(self.peak)
-##################################################################################
     layout.addWidget(self.toolbar)
     #self.figure.subplots_adjust(left = 0.09, bottom = 0.1, right = 0.91, top = 0.96)
     axes1 = self.figure.add_subplot(1,1,1)
@@ -132,117 +133,106 @@ class FigureTab:
     self.mode = 'reim'
     self.rus = rus
 
-  def xlim(self, freq):
-    start = freq[0]
-    stop = freq[-1]
-    min = np.minimum(start, stop)
-    max = np.maximum(start, stop)
-    margin = (max - min) / 50
-    return (min - margin, max + margin)
-
-  def plot(self):
-    #self.crsor.valueChanged.connect(self.plot_crsor)
-    getattr(self, 'plot_%s' % self.mode)()
-
-
   def update(self, mode):
-    #self.crsor.valueChanged.connect(self.plot_crsor)
     getattr(self, 'update_%s' % mode)()
 
 ####################################################################################
-####################################################################################
   
-  def plot_curves(self, freq, data1, label1, limit1, data2, label2, limit2, tf):
+  #def plot_curves(self, freq, data1, label1, limit1, data2, label2, limit2, tf):
+  def plot_curves(self, tf):
     matplotlib.rcdefaults()
     matplotlib.rcParams['axes.formatter.use_mathtext'] = True
     self.figure.clf()
-    self.figure.text(0.12, 0.005,r'  f                   z               $\phi$                            best $\phi$')
-    data4 = np.abs(data1 +1j*data2)
-    self.data4 = data4
-    #limit2 = limit1
+    self.figure.text(0.12, 0.005,r'  f          z       $\phi$       $\phi$$_0$', fontsize = 18)
+    #
+    freq = self.rus.reim.freq
+    data = self.rus.reim.data
+    data1 = np.real(data)
+    data2 = np.imag(data)
+    data3 = np.absolute(data)
+    self.data3 = data3
+    l = data3.max()
     ph = 0
     phD = 0
     co = 1
     si = 0
     #self.tf = ''
+    #operate on phase
     if tf!='':
       if self.mode == 'reim':
-          if tf == 'set':
-                  phD = self.phase.value()
-                  ph = math.radians(phD)
-                  tf = ''
-          if tf == 'adj':
-                  d1 = sum(data1)
-                  d2 = sum(data2)
-                  if d2 == 0.0: d1 = 1.0
-                  ph = (math.atan2(-d2, d1))
-                  phD = math.degrees(ph)
-                  self.best.setValue(phD)
-                  tf = ''
-          co = math.cos(ph)
-          si = math.sin(ph)
-    self.phase.setValue(phD)
+        if tf == 'set':
+            phD = self.phase.value()
+            ph = math.radians(phD)
+            tf = ''
+        if tf == 'adj':
+            d1 = sum(data1)
+            d2 = sum(data2)
+            if d2 == z: d1 = 1.0
+            ph = (math.atan2(-d2, d1))
+            phD = math.degrees(ph)
+            self.best.setValue(phD)
+            tf = ''
+    co = math.cos(ph)
+    si = math.sin(ph)
     d1 = co*data1 - si*data2
     d2 = si*data1 + co*data2
-    self.freq = freq
-    self.limit2 = limit2
+    self.phase.setValue(phD)
     #find maximum
-    i = np.argmax(data4)
+    i = np.argmax(data3)
     freqmax = float(freq[i])
-    vmax = data4[i]
+    vmax = data3[i]
     freq3 = [freqmax,freqmax]
-    if self.mode == 'absm': data3 = [0.0, sqr2*vmax]
-    data3 = [-vmax,vmax]
+    reim_Max = [-vmax,vmax]
     #add axes
-    #self.figure.subplots_adjust(left = 0.09, bottom = 0.1, right = 0.91, top = 0.96)
     axes1 = self.figure.add_subplot(1,1,1)
     axes1.cla()
     axes1.xaxis.grid()
     axes1.set_xlabel('kHz')
-    axes1.set_ylabel(label1)
-    xlim = self.xlim(freq)
-    axes1.set_xlim(xlim)
-    ###################################################################################
+    axes1.set_ylabel('real')
     #Setup crsor spinbox
     self.crsor.setMaximum(freq[-1])
     self.crsor.setMinimum(freq[0])
     sstep = (freq[1]-freq[0])
     self.crsor.setSingleStep(sstep)
     self.crsor.setValue(freqmax)
-    hgt = data4[i]
-    if self.mode == 'reim': self.temp.setValue(np.abs(sqr2*data4[i]))
-    if self.mode == 'absm':  
-        self.temp.setValue(np.abs(sqr2*data1[i]))
-        hgt = sqr2*hgt
-    if limit1 is not None: axes1.set_ylim(limit1)
-    ##############################################################################
-    self.curve1, = axes1.plot(freq, d1, color = 'blue', label = label1)
-    if data2 is None:
-      self.canvas.draw()
-      return
-    axes1.tick_params('y', color = 'blue', labelcolor = 'blue')
+    #setup axes
+    hgt = data3[i]
+    xlim = [freq[0],freq[-1]]
+    axes1.set_xlim(xlim)
+    axes1.tick_params('y', color = 'black', labelcolor = 'black')
     axes1.yaxis.label.set_color('blue')
     axes2 = axes1.twinx()
-    axes2.spines['left'].set_color('blue')
-    axes2.spines['right'].set_color('red')
-    axes2.set_ylabel(label2)
+    axes2.set_ylabel('imag')
     axes2.set_xlim(xlim)
-    if limit2 is not None: axes2.set_ylim(limit2)
     axes3 = axes1.twinx()
     self.axes3 = axes3
-    if limit2 is not None: axes3.set_ylim(limit2)
-    axes2.tick_params('y', color = 'red', labelcolor = 'red')
-    axes2.yaxis.label.set_color('red')
-    self.curve2, = axes2.plot(freq, d2, color = 'red', label = label2)
-    self.curve3, = axes3.plot(freq3, data3, color = 'blue', linewidth = 1, linestyle = '--')
-    self.curse = Cursor(axes3, horizOn=True, vertOn=True, useblit=True, color = 'blue', linewidth = 1)
-    span = [0,0]
-    self.span = span
-    #self.crsor.valueChanged.connect(self.plot_crsr)
-    #if tf == '': self.canvas.draw()
+    if self.mode == 'reim': lim = [-l,l]
+    if self.mode == 'absm': lim = [z,l]
+    if lim is not None: 
+        axes1.set_ylim(lim)
+        axes2.set_ylim(lim)
+        axes3.set_ylim(lim)
+    # initiate plots
+    if self.mode == 'reim': 
+        self.temp.setValue(np.abs(sqr2*data3[i]))
+        axes2.yaxis.label.set_color('red')
+        self.curve1, = axes1.plot(freq, d1, color = 'blue', label = 'real')
+        self.curve2, = axes2.plot(freq, d2, color = 'red', label = 'imag')
+    if self.mode == 'absm': 
+        self.temp.setValue(np.abs(sqr2*data1[i]))
+        axes1.set_ylabel('magnitude')
+        axes1.yaxis.label.set_color('red')
+        axes2.tick_params('y',color = 'black', labelcolor = 'black')
+        axes2.set_ylabel('')
+        hgt = sqr2*hgt
+        self.curve2, = axes2.plot(freq, data3, color = 'red', label = 'magnitude')
+    #plot line at max
+    self.curve3, = axes3.plot(freq3, reim_Max, color = 'blue', linewidth = 1, linestyle = '--')
+    #enable cursor
+    self.cur = Cursor(axes3, horizOn=True, vertOn=True, useblit=True, color = 'blue', linewidth = 1)
     self.canvas.draw()
+    #enable zoom box
     axes3.callbacks.connect('xlim_changed',self.on_xlims_change)
-    self.crsor.valueChanged.connect(self.plot_crsr)
   
   def mark(self):
     self.canvas.draw
@@ -250,50 +240,40 @@ class FigureTab:
   def onclick(self,event):
     #gets cursor coordinates
     ix, iy = event.xdata, event.ydata
-    #print ( ix, iy)
     coords = [ix, iy]
     self.coords = coords
  
   def on_xlims_change(self, axes3):
-    #gets zoom box coordinates
-    #print('xlims_changed')
-    k = self.cbox()[2]
-    d = self.cbox()[3]
-    f = self.cbox()[4]
+    #gets zoom box values
+    # izl, izr, km, wx
+    k = self.zbox()[2]
+    d = np.abs(self.rus.reim.data)
+    f = self.rus.reim.freq
     self.temp.setValue(sqr2*d[k])
     self.crsor.setValue(f[k])
 
   def plot_crsr(self):
     #plots vertical line at peak position and can be moved
-    #print('plot_crsr')
     axes3 = self.axes3
-    data4 = self.data4
-    if self.cbox() == None: 
-      #print(self.cbox())
+    data3 = np.abs(self.rus.reim.data)
+    if self.zbox() == None: 
       return
-    #d = self.cbox()[3]
-    hgt = self.cbox()[6]
-    #max = np.max(d)
+    f = self.rus.reim.freq
+    hgt = self.axes3.get_ylim() #remember hgt before cla
     axes3.cla()
-    #axes3.tick_params(right = False)
-    #axes3.yaxis.set_ticklabels([])
+    axes3.tick_params(right = False)
+    axes3.yaxis.set_ticklabels([])
     fre = self.find_dPoint()[1]
     j = self.find_dPoint()[0]
     posf = [fre,fre]
-    h = (data4[j])
-    z = 0.0
+    h = (data3[j])
     axes3.set_ylim(hgt)
-    offset = self.freq[6]-self.freq[0]
-    if self.mode == 'absm':
-        val = [z, sqr2*h]
-        self.temp.setValue(sqr2*h)
-        q = sqr2*h
-    if self.mode == 'reim':
-        val = [-h, h]
-        self.temp.setValue(h)
-        q = h
+    offset = f[6]-f[0]
+    if self.mode == 'absm':val = [z, h]
+    if self.mode == 'reim':val = [-h, h]
+    self.temp.setValue(h)
     axes3.plot(posf, val, color = 'black', linewidth = 1, linestyle = 'solid')
-    axes3.text(fre+offset, q, round(fre,3), bbox=dict(facecolor = 'yellow', alpha = 0.5))
+    axes3.text(fre+offset, h, round(fre,3), bbox=dict(facecolor = 'yellow', alpha = 0.5))
     self.canvas.draw()
     return
 
@@ -307,83 +287,62 @@ class FigureTab:
 
   def phase_set(self, tf):
     #trigger to set best phase
-      if self.mode == 'absm': 
-        self.phase.setValue(0)
-        return
+      if self.mode == 'absm': return
       tf = 'set'
       self.tf = tf
       getattr(self, 'plot_%s' % self.mode)()
 
   def plot_reim(self):
-        self.mode = 'reim'
-        freq = self.rus.reim.freq
-        data = self.rus.reim.data
-        d1 = np.real(data)
-        d2 = np.imag(data)
-        d3 = np.absolute(data)
-        max = np.fmax(0.001, d3.max())
         tf = self.tf
-        self.plot_curves(freq, d1, 'real', (-1.03 * max, 1.03 * max), d2, 'imag', (-1.03*max, 1.03*max), tf)
+        self.plot_curves(tf)
 
   def update_reim(self):
-    self.mode = 'reim'
-    getattr(self, 'plot_%s' % self.mode)()
-    #self.plot_reim()
+      self.plot_reim()
 
   def plot_absm(self):
     self.mode = 'absm'
-    freq = self.rus.reim.freq
-    d3 = np.absolute(self.rus.reim.data)
-    max = np.fmax(0.001,d3.max())
     tf = self.tf
-    self.plot_curves(freq, d3, ' ', (0, 1.03*max), d3, 'Magnitude', (0, 1.03*max), tf)
+    self.plot_curves(tf)
     ##############################################################################################################
 
   def update_absm(self):
-    self.mode = 'absm'
-    getattr(self, 'plot_%s' % self.mode)()
-    #self.plot_reim()
+     self.plot_absm()
 
-  def cbox(self):
+  def zbox(self):
+    sz = self.rus.sweep_size
     span = self.axes3.get_xlim()
     hight = self.axes3.get_ylim()
-    #print(hight)
-    #print(span, hight)
-    if span[0] == 0.0: 
+    if span[0] == 0: 
         wx = 'nozbox'
         return
-    #print(span)
-    d = self.data4
-    f = self.freq
+    f = self.rus.reim.freq
+    d = np.absolute(self.rus.reim.data)
     f0 = span[0]
-    i = 0
-    for fl in self.freq:
-        i = i + 1
-        if fl >= f0:
-                i = i
-                break
-    f0 = span[1]
-    j = 0
-    for fr in self.freq:
-        j = j + 1
-        if fr >= f0:
-                  break
-    datas = d[i:j]
-    freqs = f[i:j]
-    k = np.argmax(datas)
-    km = k+i
+    for i in range(sz):
+        if f[i] >= f0:
+            izl = i
+            break
+    f1 = span[1]
+    for j in range(sz):
+        if f[j] >= f1:
+            izr = j
+            break
+    km = np.argmax(d[izl:izr])
+    km = km +izl
     wx = 'zbox'
-    return fl, fr, k, datas, freqs, span, hight, wx
+    return izl, izr, km, wx
 
   def find_dPoint(self):
-    f = self.crsor.value()
+      #finds the closest data point to the crsr
+    fv = self.crsor.value()
+    f = self.rus.reim.freq
     i = 0
-    for fre in self.freq:
+    for fre in f:
         i = i+1
-        if fre >= f: 
+        if fre >= fv: 
             break
-    fre = self.freq[i-2]
-    j = i-2
+    fre = f[i-1]
+    j = i-1
     return j, fre
 
 class rus(QMainWindow, Ui_rus):
@@ -401,7 +360,7 @@ class rus(QMainWindow, Ui_rus):
     # sweep parameters
     self.sweep_start = 300
     self.sweep_stop = 400
-    self.sweep_Hz = 20
+    self.sweep_Hz = 40
     self.sweep_size = int(1000*(self.sweep_stop-self.sweep_start)/self.sweep_Hz)
     #sstep = self.sweep_Hz
     if(self.sweep_size)>32766:
@@ -660,7 +619,7 @@ class rus(QMainWindow, Ui_rus):
     reim_start = settings.value('reim_start', 300, type = int)
     reim_stop = settings.value('reim_stop', 400, type = int)
     #reim_size = settings.value('reim_size', 1, type = int)
-    self.sweep_Hz = settings.value('step',20,type = int)
+    self.sweep_Hz = settings.value('step',40,type = int)
     self.startValue.setValue(reim_start)
     self.stopValue.setValue(reim_stop)
     #self.stepValue.setValue(reim_size)
