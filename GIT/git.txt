@@ -1,4 +1,0 @@
-﻿    a. git status
-    b. git add .
-    c. git commit -m “comment”
-    d. git push
