@@ -1,0 +1,37 @@
+Download and install python-3.8.10-amd64.exe
+Install PIP
+pip install pyqt5
+pip install numpy
+pip install matplotlib
+pip install pyserial
+pip install serial
+
+pyinstaller -F RUSpy_06.py
+
+Building from source
+The installation of the development machine is described at this link.
+
+The structure of the source code and of the development chain is described at this link.
+
+Setting up the Vitis and Vivado environment:
+
+source /opt/Xilinx/Vitis/2020.2/settings64.sh
+Cloning the source code repository:
+
+git clone https://github.com/pavel-demin/red-pitaya-notes
+cd red-pitaya-notes
+Building vna.bit:
+
+make NAME=vna bit
+Building SD card image zip file:
+
+source helpers/build-all.sh
+
+
+Getting started
+Download SD card image zip file.
+Copy the contents of the SD card image zip file to a micro SD card.
+Optionally, to start one of the applications automatically at boot time, copy its start.sh file from apps/<application> to the topmost directory on the SD card.
+Install the micro SD card in the Red Pitaya board and connect the power.
+Applications can be started from the web interface.
+The default password for the root account is changeme.
