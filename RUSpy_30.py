@@ -400,7 +400,16 @@ class FigureTab:
 
   def wFreq(self):#writes found peaks to file
     global rusf, sx, comFlag, dt, id
-    if rusf == []:return
+    if self.rus.auto == True:return
+    if rusf == []:
+      dat = dt
+      id0 = self.rus.Tkc.value()
+      tid = str(int(id0+0.5))
+      fn = 'Data/'+ tid + '_' +sx +'_' + dat + '_F.dat'
+      with open(fn, 'w', newline='') as f:
+          f.write('%8.2f' % id0)
+          f.write(' ' +sx +'\n')
+      return
     dat = dt
     id0 = self.rus.Tkc.value()
     tid = str(int(id0+0.5))
@@ -944,7 +953,7 @@ class rus(QMainWindow, Ui_rus):
         attr.data = adc1[0:size].copy()
         attr.unity = np.full((size),1)
         #print(self.Tsw)
-        if self.Tsw == True: self.update_tab()
+        if self.Tsw == True and self.auto == False: self.update_tab()
         if self.Tsw == False: 
             self.write_dat()
             if self.old == True: self.TstepTimer.start() #enures in Labview no reset
