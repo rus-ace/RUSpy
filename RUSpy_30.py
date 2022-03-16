@@ -409,6 +409,7 @@ class FigureTab:
       with open(fn, 'w', newline='') as f:
           f.write('%8.2f' % id0)
           f.write(' ' +sx +'\n')
+      f.close
       return
     dat = dt
     id0 = self.rus.Tkc.value()
@@ -423,7 +424,8 @@ class FigureTab:
           f.write('%8.2f' % id0)
           f.write(' ' +sx +'\n')
           for j in range(len(b)):
-              f.write('%3.7f  %5.4f  %5.1f \n' % (0.001*bx[j], by[j], b1[j]))  
+              f.write('%3.7f  %5.4f  %5.1f \n' % (0.001*bx[j], by[j], b1[j]))
+       f.close()  
     self.axes1.plot(bx,by,color = 'black', marker = matplotlib.markers.CARETDOWNBASE , markersize =10, linestyle = 'None')
     self.canvas.draw()
 
