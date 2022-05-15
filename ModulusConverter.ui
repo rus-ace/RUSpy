@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ModulusConverter</class>
+ <widget class="QDialog" name="ModulusConverter">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>762</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ACE Modulus calculator</string>
+  </property>
+  <widget class="QDoubleSpinBox" name="C44">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>30</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="maximum">
+    <double>2000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+   <property name="value">
+    <double>25.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="vs">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>30</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::NoButtons</enum>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="maximum">
+    <double>50.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Sl">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>34</y>
+     <width>161</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;μ Shear modulus(GPa)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>480</x>
+     <y>30</y>
+     <width>176</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Shear Velocity (kM/s)</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="vl">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>70</y>
+     <width>111</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::NoButtons</enum>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="decimals">
+    <number>3</number>
+   </property>
+   <property name="maximum">
+    <double>50.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>1.000000000000000</double>
+   </property>
+   <property name="value">
+    <double>0.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>480</x>
+     <y>70</y>
+     <width>216</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Longitudinal Velocity (kM/s)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Bl">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>68</y>
+     <width>166</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Bulk Modulus (GPa)</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="Bm">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>70</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="maximum">
+    <double>2000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+   <property name="value">
+    <double>68.000000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="C11">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>155</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="maximum">
+    <double>2000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="Ym">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>115</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="maximum">
+    <double>2000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="sg">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>195</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="specialValueText">
+    <string notr="true" comment="--" extracomment="--">--</string>
+   </property>
+   <property name="accelerated">
+    <bool>false</bool>
+   </property>
+   <property name="correctionMode">
+    <enum>QAbstractSpinBox::CorrectToPreviousValue</enum>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="decimals">
+    <number>4</number>
+   </property>
+   <property name="minimum">
+    <double>-0.500000000000000</double>
+   </property>
+   <property name="maximum">
+    <double>0.499900000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Yl">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>115</y>
+     <width>166</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Young's Modulus (GPa)</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Cl">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>152</y>
+     <width>131</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;C&lt;span style=&quot; vertical-align:sub;&quot;&gt;11&lt;/span&gt; (GPa)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Pl">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>196</y>
+     <width>119</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;body&gt;&lt;p&gt;&amp;sigma;  Poisson's ratio&lt;p&gt;&lt;body&gt;&lt;html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="la">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>240</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="maximum">
+    <double>2000.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.100000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Sl_2">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>242</y>
+     <width>86</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;λ (GPa)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QDoubleSpinBox" name="rho">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>115</y>
+     <width>116</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="specialValueText">
+    <string/>
+   </property>
+   <property name="suffix">
+    <string/>
+   </property>
+   <property name="maximum">
+    <double>30.000000000000000</double>
+   </property>
+   <property name="singleStep">
+    <double>0.010000000000000</double>
+   </property>
+   <property name="value">
+    <double>2.700000000000000</double>
+   </property>
+  </widget>
+  <widget class="QLabel" name="Sl_3">
+   <property name="geometry">
+    <rect>
+     <x>485</x>
+     <y>120</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;rho; (g/cc)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Reset">
+   <property name="geometry">
+    <rect>
+     <x>280</x>
+     <y>265</y>
+     <width>125</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb( 80, 200, 255);</string>
+   </property>
+   <property name="text">
+    <string>Clear entries</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="clear">
+   <property name="geometry">
+    <rect>
+     <x>428</x>
+     <y>264</y>
+     <width>109</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(255, 85, 255);</string>
+   </property>
+   <property name="text">
+    <string>Clear checks</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkB">
+   <property name="geometry">
+    <rect>
+     <x>24</x>
+     <y>68</y>
+     <width>31</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkM">
+   <property name="geometry">
+    <rect>
+     <x>24</x>
+     <y>28</y>
+     <width>31</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkY">
+   <property name="geometry">
+    <rect>
+     <x>24</x>
+     <y>114</y>
+     <width>31</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkC">
+   <property name="geometry">
+    <rect>
+     <x>24</x>
+     <y>152</y>
+     <width>31</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkS">
+   <property name="geometry">
+    <rect>
+     <x>24</x>
+     <y>194</y>
+     <width>31</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkL">
+   <property name="geometry">
+    <rect>
+     <x>26</x>
+     <y>238</y>
+     <width>31</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>360</x>
+     <y>150</y>
+     <width>376</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Calculates when: 
+any two check boxes are checked.
+any of two checked boxes are changed.\</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="save">
+   <property name="geometry">
+    <rect>
+     <x>572</x>
+     <y>264</y>
+     <width>109</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgb(200, 200, 2);</string>
+   </property>
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

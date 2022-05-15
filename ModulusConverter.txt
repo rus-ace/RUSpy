@@ -1,0 +1,3 @@
+ModulusConcerter3.py and its associated ui file take any two isotropic elastic moduli and compute all the others. If density is known the sound speeds are also computed.
+
+Code computes when any two check boxes are checked. 
